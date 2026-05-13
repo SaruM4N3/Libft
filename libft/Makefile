@@ -1,110 +1,87 @@
-# COLORS
-RED    = \033[31m
-GREEN  = \033[32m
-YELLOW = \033[33m
-RESET  = \033[0m
 
 # VARIABLES
 NAME = libft.a
 
 CC = cc
-CFLAGS ?= -Wall -Wextra -Werror -I.
-OBJDIR = Obj
-DEPDIR = Dep
+AR = ar -rcs
+OPTIMIZATION ?= -O2
 
-SRCS =	ft_isalpha.c \
-        ft_isdigit.c \
-        ft_isalnum.c \
-        ft_isascii.c \
-        ft_isprint.c \
-        ft_strlen.c \
-        ft_memset.c \
-        ft_bzero.c \
-        ft_memcpy.c \
-        ft_memmove.c \
-        ft_strlcpy.c \
-        ft_strlcat.c \
-        ft_toupper.c \
-        ft_tolower.c \
-        ft_strchr.c \
-        ft_strrchr.c \
-        ft_strncmp.c \
-        ft_memchr.c \
-        ft_memcmp.c \
-        ft_strnstr.c \
-		ft_atoi.c \
-		ft_calloc.c \
-		ft_strdup.c \
-		ft_substr.c \
-		ft_strjoin.c \
-		ft_strtrim.c \
-		ft_split.c \
-		ft_itoa.c \
-		ft_strmapi.c \
-		ft_striteri.c \
-		ft_putchar_fd.c \
-		ft_putstr_fd.c \
-		ft_putendl_fd.c \
-		ft_putnbr_fd.c
+OBJ_DIR = obj/
+SRC_DIR = src/
+INC_DIR = include/
+DEP_DIR = dep/
 
-SRCBONUS =	ft_lstnew_bonus.c \
-			ft_lstadd_front_bonus.c \
-			ft_lstsize_bonus.c \
-			ft_lstlast_bonus.c \
-			ft_lstadd_back_bonus.c \
-			ft_lstdelone_bonus.c \
-			ft_lstclear_bonus.c \
-			ft_lstiter_bonus.c \
-			ft_lstmap_bonus.c
+CFLAGS ?= -Wall -Wextra -Werror -MMD $(OPTIMIZATION) -mavx2 -I $(INC_DIR)
 
-OBJECTS = $(SRCS:%.c=$(OBJDIR)/%.o)
-DEPFILES = $(SRCS:%.c=$(DEPDIR)/%.d)
+MKFILES = src/char/char.mk\
+	src/convert/convert.mk\
+	src/gnl/gnl.mk\
+	src/list/list.mk\
+	src/memory/memory.mk\
+	src/mm256/mm256.mk\
+	src/printf/printf.mk\
+	src/strings/strings.mk\
+	src/time/time.mk\
+	src/write/write.mk
 
-BONUSOBJ = $(SRCBONUS:%.c=$(OBJDIR)/%.o)
-BONUSDEP = $(SRCBONUS:%.c=$(DEPDIR)/%.d)
+PRINTSTART = @printf "\n$(MAGENTA)🔨Compiling libft🔨$(RESET)\n"
+
+SRCS =
+-include $(MKFILES)
+
+OBJECTS = $(patsubst $(SRC_DIR)%.c, $(OBJ_DIR)%.o, $(SRCS))
+DEPS = $(patsubst $(SRC_DIR)%.c, $(OBJ_DIR)%.d, $(SRCS))
+
+-include $(DEPS)
+
+DIRS := $(sort $(dir $(OBJECTS)))
 
 # Build the library
-.PHONY: all
-all: $(NAME)
+printstart:
+	$(PRINTSTART)
 
-$(NAME): $(OBJDIR) $(DEPDIR) $(OBJECTS)
-	@echo "$(GREEN)Creating Archive... \n$(YELLOW)$@$(RESET)\n"
-	@ar rcs $(NAME) $(OBJECTS)
+.PHONY: all
+all: printstart $(DIRS) $(NAME)
+
+$(DIRS):
+	@mkdir -p $@
 
 # Compile .c to .o
-$(OBJDIR)/%.o: %.c Makefile
-	@echo "$(YELLOW)Compiling objects and dependencies... $(GREEN)$@ $(YELLOW)from $(GREEN)$<$(RESET)"
-	@$(CC) $(CFLAGS) -c $< -o $@ -MP -MMD -MF $(DEPDIR)/$*.d
+$(OBJ_DIR)%.o: $(SRC_DIR)%.c
+	@printf "$(YELLOW)🔨Compiling objects and dependencies... $(GREEN)$@ $(YELLOW)from $(GREEN)$<$(RESET)\n"
+	@mkdir -p $(dir $@)
+	@$(CC) $(CFLAGS) -c $< -o $@ 
 
-# Create obj dir
-$(OBJDIR):
-	@echo "$(GREEN)Creating directory... $(YELLOW)$@$(RESET)"
-	@mkdir -p $(OBJDIR)
-
-# Create dep dir
-$(DEPDIR):
-	@echo "$(GREEN)Creating directory... $(YELLOW)$@$(RESET)"
-	@mkdir -p $(DEPDIR)
-
-# Include Dependencies
--include $(DEPFILES) $(BONUSDEP)
-
-
-.PHONY: bonus
-bonus:
-	@echo "$(GREEN)Adding bonuses to library...$(RESET)"
-	@$(MAKE) --no-print-directory all SRCS="$(SRCS) $(SRCBONUS)"
+$(NAME): $(OBJECTS) Makefile
+	@printf "$(YELLOW)\n✅ Archive Created... $(GREEN)$@$(RESET)\n"
+	@$(AR) $@ $(OBJECTS)
+	@ranlib $(NAME)
 
 # Clean part
 .PHONY: clean
 clean:
-	@echo "$(RED)Basic Cleaning... \n$(YELLOW)Removing $(OBJDIR)$(RESET)"
-	@rm -rf $(OBJDIR) $(DEPDIR)
+	@printf "$(RED)Cleaning... \n$(YELLOW)Removing $(RED)$(OBJ_DIR)$(RESET)"
+	@rm -rf $(OBJ_DIR)
 
 .PHONY: fclean
 fclean: clean
-	@echo "$(RED)Full Cleaning... \n$(YELLOW)Removing $(DEPDIR) \nRemoving $(NAME)$(RESET)"
+	@printf "$(YELLOW)Removing $(RED)$(NAME)$(RESET)\n"
 	@rm -rf $(NAME)
 
 .PHONY: re
-re: fclean all
+re:
+	@$(MAKE) --no-print-directory fclean
+	@$(MAKE) --no-print-directory all
+
+.DEFAULT_GOAL = all
+
+# COLORS
+RESET = \033[0m
+RED = \033[1;31m
+GREEN = \033[1;32m
+YELLOW = \033[1;33m
+BLUE = \033[1;34m
+MAGENTA = \033[1;35m
+CYAN = \033[1;36m
+WHITE = \033[1;37m
+GREY = \033[1;90m
